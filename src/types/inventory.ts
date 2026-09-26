@@ -147,3 +147,39 @@ export interface ReorderSuggestion {
   estimatedCost: number;
   preferredWarehouse: string;
 }
+
+export type AuditCategory = 'inventory' | 'approval' | 'system' | 'auth' | 'warehouse';
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userRole: UserRole;
+  actionCategory: AuditCategory;
+  actionType: string;
+  targetEntity: string;
+  entityRef: string;
+  description: string;
+  severity: 'info' | 'warning' | 'critical';
+  ipAddress: string;
+  metadata?: Record<string, any>;
+}
+
+export interface SystemConfig {
+  companyName: string;
+  companyTaxId: string;
+  baseCurrency: string;
+  defaultValuationMethod: 'FIFO' | 'Weighted Average' | 'Standard Cost';
+  receiptApprovalThreshold: number;
+  transferApprovalThreshold: number;
+  adjustmentApprovalThreshold: number;
+  enforceLotTracking: boolean;
+  mfaEnforced: boolean;
+  auditRetentionDays: number;
+  sessionTimeoutMinutes: number;
+  emailAlertsOnCriticalEvents: boolean;
+  autoLockNegativeStock: boolean;
+}
+

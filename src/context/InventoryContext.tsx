@@ -7,6 +7,9 @@ import {
   User,
   UserRole,
   NotificationItem,
+  AuditLogEntry,
+  AuditCategory,
+  SystemConfig,
 } from '../types/inventory';
 import {
   INITIAL_PRODUCTS,
@@ -15,6 +18,8 @@ import {
   INITIAL_LEDGER,
   INITIAL_USERS,
   INITIAL_NOTIFICATIONS,
+  INITIAL_AUDIT_LOGS,
+  INITIAL_SYSTEM_CONFIG,
 } from '../data/initialData';
 
 interface ToastState {
@@ -43,6 +48,23 @@ interface InventoryContextType {
   isAuthenticated: boolean;
   authPortalMode: 'signin' | 'signup';
   toast: ToastState | null;
+
+  // Audit Logs & System Configuration
+  auditLogs: AuditLogEntry[];
+  systemConfig: SystemConfig;
+  updateSystemConfig: (updates: Partial<SystemConfig>) => void;
+  logAuditEvent: (data: {
+    actionCategory: AuditCategory;
+    actionType: string;
+    targetEntity: string;
+    entityRef: string;
+    description: string;
+    severity?: 'info' | 'warning' | 'critical';
+    metadata?: Record<string, any>;
+    customUser?: { id: string; name: string; email: string; role: UserRole };
+  }) => void;
+  clearAuditLogs: () => void;
+  exportAuditLogsCsv: () => void;
 
   // Navigation & UI controls
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -114,6 +136,8 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'stocksense_notifications_v2',
   THEME: 'stocksense_theme_v2',
   CURRENT_USER_ID: 'stocksense_cur_user_v2',
+  AUDIT_LOGS: 'stocksense_audit_logs_v2',
+  SYSTEM_CONFIG: 'stocksense_system_config_v2',
 };
 
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -145,6 +169,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+  });
+
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.AUDIT_LOGS);
+    return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
+  });
+
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.SYSTEM_CONFIG);
+    return saved ? JSON.parse(saved) : INITIAL_SYSTEM_CONFIG;
   });
 
   const [currentUser, setCurrentUserState] = useState<User>(() => {
@@ -208,8 +242,123 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [notifications]);
 
   useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify(auditLogs));
+  }, [auditLogs]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_CONFIG, JSON.stringify(systemConfig));
+  }, [systemConfig]);
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, currentUser.id);
   }, [currentUser]);
+
+  const logAuditEvent = (data: {
+    actionCategory: AuditCategory;
+    actionType: string;
+    targetEntity: string;
+    entityRef: string;
+    description: string;
+    severity?: 'info' | 'warning' | 'critical';
+    metadata?: Record<string, any>;
+    customUser?: { id: string; name: string; email: string; role: UserRole };
+  }) => {
+    const actor = data.customUser || currentUser;
+    const newEntry: AuditLogEntry = {
+      id: `aud-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toISOString(),
+      userId: actor.id,
+      userName: actor.name,
+      userEmail: actor.email,
+      userRole: actor.role,
+      actionCategory: data.actionCategory,
+      actionType: data.actionType,
+      targetEntity: data.targetEntity,
+      entityRef: data.entityRef,
+      description: data.description,
+      severity: data.severity || 'info',
+      ipAddress: '192.168.10.45',
+      metadata: data.metadata,
+    };
+    setAuditLogs(prev => [newEntry, ...prev]);
+  };
+
+  const updateSystemConfig = (updates: Partial<SystemConfig>) => {
+    setSystemConfig(prev => {
+      const next = { ...prev, ...updates };
+      logAuditEvent({
+        actionCategory: 'system',
+        actionType: 'CONFIG_UPDATED',
+        targetEntity: 'SystemConfig',
+        entityRef: 'EnterpriseSettings',
+        description: `Updated system configuration parameters (${Object.keys(updates).join(', ')})`,
+        severity: 'info',
+        metadata: updates,
+      });
+      return next;
+    });
+    showToast('Configuration Saved', 'System preferences and compliance rules updated.', 'success');
+  };
+
+  const clearAuditLogs = () => {
+    const archiveCount = auditLogs.length;
+    const baselineLog: AuditLogEntry = {
+      id: `aud-${Date.now()}-reset`,
+      timestamp: new Date().toISOString(),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userRole: currentUser.role,
+      actionCategory: 'system',
+      actionType: 'AUDIT_LOGS_PURGED',
+      targetEntity: 'AuditLogRegistry',
+      entityRef: `PURGE-${archiveCount}-ENTRIES`,
+      description: `Audit trail archived and purge completed by ${currentUser.name} (${currentUser.role}). Retention compliance validated.`,
+      severity: 'warning',
+      ipAddress: '192.168.10.45',
+      metadata: { archivedEntries: archiveCount },
+    };
+    setAuditLogs([baselineLog]);
+    showToast('Audit Trail Archived', `${archiveCount} audit records archived & compliance checkpoint logged.`, 'info');
+  };
+
+  const exportAuditLogsCsv = () => {
+    const headers = ['ID', 'Timestamp', 'User Name', 'User Email', 'Role', 'Category', 'Action Type', 'Entity', 'Reference', 'Severity', 'IP Address', 'Description'];
+    const rows = auditLogs.map(log => [
+      log.id,
+      log.timestamp,
+      `"${log.userName.replace(/"/g, '""')}"`,
+      log.userEmail,
+      log.userRole,
+      log.actionCategory,
+      log.actionType,
+      log.targetEntity,
+      `"${log.entityRef.replace(/"/g, '""')}"`,
+      log.severity,
+      log.ipAddress,
+      `"${log.description.replace(/"/g, '""')}"`,
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `StockSense_Audit_Log_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    logAuditEvent({
+      actionCategory: 'system',
+      actionType: 'AUDIT_LOG_EXPORTED',
+      targetEntity: 'AuditLogRegistry',
+      entityRef: `CSV-${auditLogs.length}-RECORDS`,
+      description: `Exported complete audit log (${auditLogs.length} events) to CSV format`,
+      severity: 'info',
+    });
+
+    showToast('Export Completed', `Audit log (${auditLogs.length} events) downloaded.`, 'success');
+  };
 
   const toggleTheme = () => {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
@@ -231,11 +380,29 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       role,
     };
     setCurrentUserState(userWithRole);
+    logAuditEvent({
+      actionCategory: 'auth',
+      actionType: 'ROLE_SWITCHED',
+      targetEntity: 'UserSession',
+      entityRef: role,
+      description: `Switched active session persona to ${role.replace('_', ' ').toUpperCase()}`,
+      severity: 'info',
+      customUser: userWithRole,
+    });
     showToast('Role Switched', `Active session changed to ${role.replace('_', ' ').toUpperCase()}`, 'info');
   };
 
   const setCurrentUser = (user: User) => {
     setCurrentUserState(user);
+    logAuditEvent({
+      actionCategory: 'auth',
+      actionType: 'USER_IMPERSONATED',
+      targetEntity: 'UserAccount',
+      entityRef: user.email,
+      description: `Authenticated / switched active session to ${user.name} (${user.role.toUpperCase()})`,
+      severity: 'info',
+      customUser: user,
+    });
     showToast('Profile Changed', `Logged in as ${user.name} (${user.role})`, 'success');
   };
 
@@ -272,6 +439,17 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.setItem('stocksense_auth_authenticated', 'true');
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, foundUser.id);
     setAuthModalOpen(false);
+
+    logAuditEvent({
+      actionCategory: 'auth',
+      actionType: 'AUTH_LOGIN',
+      targetEntity: 'AuthenticationSession',
+      entityRef: foundUser.email,
+      description: `User ${foundUser.name} signed into StockSense ERP Console`,
+      severity: 'info',
+      customUser: foundUser,
+    });
+
     showToast('Signed In', `Authenticated as ${foundUser.name} (${foundUser.role.replace('_', ' ').toUpperCase()})`, 'success');
     return { success: true };
   };
@@ -309,6 +487,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
     setAuthModalOpen(false);
 
+    logAuditEvent({
+      actionCategory: 'auth',
+      actionType: 'USER_REGISTERED',
+      targetEntity: 'UserAccount',
+      entityRef: newUser.email,
+      description: `New enterprise user registered: ${newUser.name} as ${newUser.role} in ${newUser.department}`,
+      severity: 'info',
+      customUser: newUser,
+    });
+
     // Add welcome notification
     const welcomeNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
@@ -325,6 +513,14 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const logout = () => {
+    logAuditEvent({
+      actionCategory: 'auth',
+      actionType: 'AUTH_LOGOUT',
+      targetEntity: 'AuthenticationSession',
+      entityRef: currentUser.email,
+      description: `User ${currentUser.name} signed out from console`,
+      severity: 'info',
+    });
     setIsAuthenticated(false);
     localStorage.setItem('stocksense_auth_authenticated', 'false');
     setAuthPortalMode('signin');
@@ -388,13 +584,25 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setLedger(prev => [...newLedgerEntries, ...prev]);
     }
 
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'PRODUCT_CREATED',
+      targetEntity: 'ProductMaster',
+      entityRef: newProduct.sku,
+      description: `Registered new catalog SKU ${newProduct.name} (${newProduct.sku}) in ${newProduct.category}`,
+      severity: 'info',
+      metadata: { costPrice: newProduct.costPrice, sellingPrice: newProduct.sellingPrice, uom: newProduct.uom },
+    });
+
     showToast('Product Created', `${newProduct.name} (${newProduct.sku}) added to catalog.`, 'success');
   };
 
   const updateProduct = (id: string, updates: Partial<Product>) => {
+    let affectedProd: Product | undefined;
     setProducts(prev =>
       prev.map(p => {
         if (p.id !== id) return p;
+        affectedProd = p;
         const updated = { ...p, ...updates, updatedAt: new Date().toISOString() };
         if (updates.warehouseStocks) {
           updated.totalStock = updates.warehouseStocks.reduce((sum, w) => sum + (Number(w.quantity) || 0), 0);
@@ -403,6 +611,17 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return updated;
       })
     );
+
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'PRODUCT_UPDATED',
+      targetEntity: 'ProductMaster',
+      entityRef: affectedProd?.sku || id,
+      description: `Updated master product properties for ${affectedProd?.name || id} (${Object.keys(updates).join(', ')})`,
+      severity: 'info',
+      metadata: updates,
+    });
+
     showToast('Product Updated', 'Changes saved successfully', 'success');
   };
 
@@ -414,6 +633,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return;
     }
     setProducts(prev => prev.filter(p => p.id !== id));
+
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'PRODUCT_DELETED',
+      targetEntity: 'ProductMaster',
+      entityRef: prod.sku,
+      description: `Discontinued and removed product ${prod.name} (${prod.sku}) from catalog`,
+      severity: 'warning',
+    });
+
     showToast('Product Deleted', `Removed ${prod.sku} from catalog`, 'info');
   };
 
@@ -437,11 +666,33 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }))
     );
 
+    logAuditEvent({
+      actionCategory: 'warehouse',
+      actionType: 'WAREHOUSE_CREATED',
+      targetEntity: 'WarehouseFacility',
+      entityRef: newWh.code,
+      description: `Commissioned new storage distribution facility ${newWh.name} (${newWh.code}) in ${newWh.city}`,
+      severity: 'info',
+      metadata: { capacitySqFt: newWh.totalCapacitySqFt, zones: newWh.zones },
+    });
+
     showToast('Warehouse Added', `${newWh.name} (${newWh.code}) created successfully`, 'success');
   };
 
   const updateWarehouse = (id: string, updates: Partial<Warehouse>) => {
+    const targetWh = warehouses.find(w => w.id === id);
     setWarehouses(prev => prev.map(w => (w.id === id ? { ...w, ...updates } : w)));
+
+    logAuditEvent({
+      actionCategory: 'warehouse',
+      actionType: 'WAREHOUSE_UPDATED',
+      targetEntity: 'WarehouseFacility',
+      entityRef: targetWh?.code || id,
+      description: `Updated facility parameters for ${targetWh?.name || id} (${Object.keys(updates).join(', ')})`,
+      severity: 'info',
+      metadata: updates,
+    });
+
     showToast('Warehouse Updated', 'Facility details saved', 'success');
   };
 
@@ -480,6 +731,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     setMovements(prev => [newMovement, ...prev]);
+
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'RECEIPT_CREATED',
+      targetEntity: 'GoodsReceipt',
+      entityRef: ref,
+      description: `Created inward goods receipt ${ref} (${data.items?.length || 0} line items, total $${(data.totalValue || 0).toLocaleString()}) from ${data.partnerName || 'Supplier'}${isApprovalNeeded ? ' [Awaiting Manager Approval]' : ''}`,
+      severity: isApprovalNeeded ? 'warning' : 'info',
+      metadata: { partner: data.partnerName, totalValue: data.totalValue, itemsCount: data.items?.length, status },
+    });
 
     if (!isApprovalNeeded) {
       // Immediately apply to stock and ledger
@@ -589,6 +850,17 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     setMovements(prev => prev.map(m => (m.id === movementId ? updatedMov : m)));
     applyReceiptStock(updatedMov);
+
+    logAuditEvent({
+      actionCategory: 'approval',
+      actionType: 'APPROVAL_GRANTED',
+      targetEntity: 'GoodsReceipt',
+      entityRef: mov.referenceNumber,
+      description: `Manager approved high-value inward goods receipt ${mov.referenceNumber} ($${(mov.totalValue || 0).toLocaleString()}) from ${mov.partnerName || 'Supplier'}`,
+      severity: 'info',
+      metadata: { totalValue: mov.totalValue, approvedBy: currentUser.name },
+    });
+
     showToast('Receipt Approved', `${mov.referenceNumber} approved and goods posted to inventory.`, 'success');
   };
 
@@ -692,14 +964,35 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setLedger(prev => [...newLedgerRows, ...prev]);
     }
 
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'DELIVERY_DISPATCHED',
+      targetEntity: 'CustomerDelivery',
+      entityRef: ref,
+      description: `Dispatched customer delivery ${ref} to ${data.partnerName} ($${(data.totalValue || 0).toLocaleString()}) from ${data.sourceWarehouseName}`,
+      severity: 'info',
+      metadata: { customer: data.partnerName, partnerRef: data.partnerReference, totalValue: data.totalValue, itemsCount: data.items?.length },
+    });
+
     showToast('Delivery Dispatched', `Delivery Note ${ref} created and stock deducted.`, 'success');
     return { success: true };
   };
 
   const dispatchDelivery = (movementId: string) => {
+    const mov = movements.find(m => m.id === movementId);
     setMovements(prev =>
       prev.map(m => (m.id === movementId ? { ...m, status: 'completed' } : m))
     );
+
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'DELIVERY_COMPLETED',
+      targetEntity: 'CustomerDelivery',
+      entityRef: mov?.referenceNumber || movementId,
+      description: `Delivery dispatch confirmed and marked completed for ${mov?.partnerName || 'Customer'}`,
+      severity: 'info',
+    });
+
     showToast('Status Updated', 'Delivery marked as completed', 'success');
   };
 
@@ -759,6 +1052,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     setMovements(prev => [newMovement, ...prev]);
+
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'TRANSFER_CREATED',
+      targetEntity: 'TransferWaybill',
+      entityRef: ref,
+      description: `Initiated inter-hub transfer ${ref} ($${(data.totalValue || 0).toLocaleString()}) from ${data.sourceWarehouseName} to ${data.destinationWarehouseName}${requiresApproval ? ' [Requires Admin Authorization]' : ''}`,
+      severity: requiresApproval ? 'warning' : 'info',
+      metadata: { source: data.sourceWarehouseName, destination: data.destinationWarehouseName, totalValue: data.totalValue, requiresApproval },
+    });
 
     if (!requiresApproval) {
       // Deduct from source warehouse immediately and set in transit
@@ -853,6 +1156,17 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     setMovements(prev => prev.map(m => (m.id === movementId ? updatedMov : m)));
     deductSourceWarehouseStock(updatedMov);
+
+    logAuditEvent({
+      actionCategory: 'approval',
+      actionType: 'APPROVAL_GRANTED',
+      targetEntity: 'TransferWaybill',
+      entityRef: mov.referenceNumber,
+      description: `Authorized inter-hub stock transfer ${mov.referenceNumber} ($${(mov.totalValue || 0).toLocaleString()}) for transit to ${mov.destinationWarehouseName}`,
+      severity: 'info',
+      metadata: { totalValue: mov.totalValue, approvedBy: currentUser.name },
+    });
+
     showToast('Transfer Approved', `${mov.referenceNumber} approved and dispatched in transit.`, 'success');
   };
 
@@ -929,6 +1243,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       prev.map(m => (m.id === movementId ? { ...m, status: 'completed' } : m))
     );
 
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'TRANSFER_COMPLETED',
+      targetEntity: 'TransferWaybill',
+      entityRef: mov.referenceNumber,
+      description: `Stock intake completed for transfer ${mov.referenceNumber} at ${destWh.name}`,
+      severity: 'info',
+      metadata: { destination: destWh.name, itemsCount: mov.items.length },
+    });
+
     showToast('Transfer Completed', `Stock successfully received at ${destWh.name}.`, 'success');
   };
 
@@ -967,6 +1291,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     setMovements(prev => [newMovement, ...prev]);
+
+    logAuditEvent({
+      actionCategory: 'inventory',
+      actionType: 'ADJUSTMENT_CREATED',
+      targetEntity: 'StockAdjustment',
+      entityRef: ref,
+      description: `Physical cycle count adjustment ${ref} logged (Variance: $${Math.abs(data.totalValue || 0).toLocaleString()}, Reason: ${data.discrepancyReason || 'cycle_count'})${isHighValue ? ' [Awaiting Management Sign-off]' : ''}`,
+      severity: isHighValue ? 'warning' : 'info',
+      metadata: { reason: data.discrepancyReason, varianceValue: data.totalValue, warehouse: data.sourceWarehouseName },
+    });
 
     if (status === 'completed') {
       applyAdjustmentStock(newMovement);
@@ -1060,6 +1394,17 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     setMovements(prev => prev.map(m => (m.id === movementId ? updatedMov : m)));
     applyAdjustmentStock(updatedMov);
+
+    logAuditEvent({
+      actionCategory: 'approval',
+      actionType: 'APPROVAL_GRANTED',
+      targetEntity: 'StockAdjustment',
+      entityRef: mov.referenceNumber,
+      description: `Signed off on physical variance reconciliation ${mov.referenceNumber} (Net variance: $${(mov.totalValue || 0).toLocaleString()})`,
+      severity: 'info',
+      metadata: { totalValue: mov.totalValue, approvedBy: currentUser.name },
+    });
+
     showToast('Adjustment Approved', `Variance ${mov.referenceNumber} posted to company books.`, 'success');
   };
 
@@ -1102,6 +1447,16 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       prev.map(n => (n.targetId === movementId ? { ...n, read: true } : n))
     );
 
+    logAuditEvent({
+      actionCategory: 'approval',
+      actionType: 'APPROVAL_REJECTED',
+      targetEntity: mov.type === 'receipt' ? 'GoodsReceipt' : mov.type === 'transfer' ? 'TransferWaybill' : 'StockAdjustment',
+      entityRef: mov.referenceNumber,
+      description: `Rejected ${mov.referenceNumber} by ${currentUser.name}. Reason: ${remarks || 'Review criteria unmet'}`,
+      severity: 'warning',
+      metadata: { rejectedBy: currentUser.name, remarks },
+    });
+
     showToast('Request Rejected', `${mov.referenceNumber} has been rejected and marked cancelled.`, 'warning');
   };
 
@@ -1112,13 +1467,27 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     localStorage.removeItem(STORAGE_KEYS.LEDGER);
     localStorage.removeItem(STORAGE_KEYS.USERS);
     localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+    localStorage.removeItem(STORAGE_KEYS.AUDIT_LOGS);
+    localStorage.removeItem(STORAGE_KEYS.SYSTEM_CONFIG);
     setProducts(INITIAL_PRODUCTS);
     setWarehouses(INITIAL_WAREHOUSES);
     setMovements(INITIAL_MOVEMENTS);
     setLedger(INITIAL_LEDGER);
     setUsers(INITIAL_USERS);
     setNotifications(INITIAL_NOTIFICATIONS);
+    setAuditLogs(INITIAL_AUDIT_LOGS);
+    setSystemConfig(INITIAL_SYSTEM_CONFIG);
     setCurrentUserState(INITIAL_USERS[0]);
+
+    logAuditEvent({
+      actionCategory: 'system',
+      actionType: 'SYSTEM_DATA_RESET',
+      targetEntity: 'DatabaseState',
+      entityRef: 'FACTORY_RESET',
+      description: 'System demo database and local storage reset to factory initial state',
+      severity: 'critical',
+    });
+
     showToast('System Reset', 'Demo database restored to initial state.', 'info');
   };
 
@@ -1143,6 +1512,14 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         isAuthenticated,
         authPortalMode,
         toast,
+
+        // Audit Logs & System Configuration
+        auditLogs,
+        systemConfig,
+        updateSystemConfig,
+        logAuditEvent,
+        clearAuditLogs,
+        exportAuditLogsCsv,
 
         setSidebarCollapsed,
         setCurrentTab,

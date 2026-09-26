@@ -10,9 +10,15 @@ import {
   KeyRound,
   CheckCircle2,
   Lock,
+  FileText,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 import { UserRole, User } from '../../types/inventory';
+import { AuditLogTab } from './AuditLogTab';
+import { SystemConfigTab } from './SystemConfigTab';
+
+type SettingsTab = 'users' | 'rbac_matrix' | 'audit_logs' | 'system_config';
 
 export const UsersAndSettingsView: React.FC = () => {
   const {
@@ -20,11 +26,12 @@ export const UsersAndSettingsView: React.FC = () => {
     currentUser,
     setCurrentUser,
     warehouses,
+    auditLogs,
     openAuthPortal,
     showToast,
   } = useInventory();
 
-  const [activeTab, setActiveTab] = useState<'users' | 'rbac_matrix'>('users');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('users');
 
   const rbacMatrix = [
     {
@@ -126,44 +133,71 @@ export const UsersAndSettingsView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Access Control (RBAC) & Team Administration
+            Enterprise Governance, Audit & Team Administration
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Granular permission governance, facility assignments, role switching & session security
+            Immutable audit logs, granular RBAC access control, team member provisioning & system configurations
           </p>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => openAuthPortal('signup')}
-            className="px-3 py-1.5 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Register New User</span>
-          </button>
+          {activeTab === 'users' && (
+            <button
+              onClick={() => openAuthPortal('signup')}
+              className="px-3 py-1.5 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Register New User</span>
+            </button>
+          )}
 
           {/* View Switcher */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs overflow-x-auto max-w-full">
             <button
               onClick={() => setActiveTab('users')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'users'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
               Team Members ({users.length})
             </button>
             <button
               onClick={() => setActiveTab('rbac_matrix')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'rbac_matrix'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              RBAC Permission Matrix
+              RBAC Matrix
+            </button>
+            <button
+              onClick={() => setActiveTab('audit_logs')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'audit_logs'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-2xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Audit Logs</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold">
+                {auditLogs.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('system_config')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'system_config'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+              <span>System Config</span>
             </button>
           </div>
         </div>
@@ -312,6 +346,10 @@ export const UsersAndSettingsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {activeTab === 'audit_logs' && <AuditLogTab />}
+
+      {activeTab === 'system_config' && <SystemConfigTab />}
     </div>
   );
 };

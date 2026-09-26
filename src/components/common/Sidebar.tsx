@@ -79,7 +79,7 @@ export const Sidebar: React.FC = () => {
     {
       title: 'System',
       items: [
-        { id: 'users_settings', label: 'Users & RBAC', icon: Users },
+        { id: 'users_settings', label: 'Settings & Audit Logs', icon: Users },
         { id: 'api_docs', label: 'REST API & Models', icon: Code2 },
       ],
     },
