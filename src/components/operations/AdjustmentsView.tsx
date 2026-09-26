@@ -215,7 +215,7 @@ export const AdjustmentsView: React.FC = () => {
                         <span
                           className={m.totalValue > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}
                         >
-                          {m.totalValue > 0 ? `+$${m.totalValue.toFixed(2)}` : `-$${Math.abs(m.totalValue).toFixed(2)}`}
+                          {m.totalValue > 0 ? `+₹${m.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `-₹${Math.abs(m.totalValue).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </span>
                       </td>
 

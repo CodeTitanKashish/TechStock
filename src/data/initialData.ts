@@ -831,7 +831,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
 export const INITIAL_SYSTEM_CONFIG: SystemConfig = {
   companyName: 'StockSense Global Logistics Enterprise Inc.',
   companyTaxId: 'US-EIN-94-3829104',
-  baseCurrency: 'USD ($)',
+  baseCurrency: 'INR (₹)',
   defaultValuationMethod: 'FIFO',
   receiptApprovalThreshold: 10000,
   transferApprovalThreshold: 5000,

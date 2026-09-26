@@ -229,7 +229,7 @@ export const DeliveriesView: React.FC = () => {
                     </td>
 
                     <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
-                      ${m.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₹{m.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
                     <td className="py-3 px-4 text-center">
@@ -382,7 +382,7 @@ export const DeliveriesView: React.FC = () => {
 
                         <div className="col-span-3 flex items-center justify-between pt-2">
                           <span className="font-mono text-slate-700 dark:text-slate-300 font-medium">
-                            ${(item.quantity * item.unitCost).toFixed(0)}
+                            ₹{(item.quantity * item.unitCost).toLocaleString('en-IN')}
                           </span>
                           {lineItems.length > 1 && (
                             <button
@@ -402,7 +402,7 @@ export const DeliveriesView: React.FC = () => {
                 <div className="flex justify-between items-center p-3 bg-blue-50/50 dark:bg-blue-950/20 rounded-xl text-slate-900 dark:text-slate-100 font-semibold">
                   <span>Total Order Cost Valuation:</span>
                   <span className="font-mono text-base text-slate-900 dark:text-slate-100">
-                    ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>

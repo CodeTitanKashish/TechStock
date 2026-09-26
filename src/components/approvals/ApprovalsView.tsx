@@ -173,7 +173,7 @@ export const ApprovalsView: React.FC = () => {
                     <div className="text-right">
                       <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Financial Impact</span>
                       <span className="font-mono text-base font-bold text-slate-900 dark:text-slate-100">
-                        ${Math.abs(m.totalValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹{Math.abs(m.totalValue).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
 

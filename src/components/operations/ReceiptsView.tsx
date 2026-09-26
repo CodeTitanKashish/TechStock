@@ -269,7 +269,7 @@ export const ReceiptsView: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        ${m.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹{m.totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
                       <td className="py-3 px-4 text-center">
@@ -439,7 +439,7 @@ export const ReceiptsView: React.FC = () => {
 
                       <div className="col-span-2 flex items-center justify-between pt-3">
                         <span className="font-mono text-slate-700 dark:text-slate-300 font-medium">
-                          ${(item.quantity * item.unitCost).toFixed(0)}
+                          ₹{(item.quantity * item.unitCost).toLocaleString('en-IN')}
                         </span>
                         {lineItems.length > 1 && (
                           <button
@@ -458,7 +458,7 @@ export const ReceiptsView: React.FC = () => {
                 <div className="flex justify-between items-center p-3 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-xl text-slate-900 dark:text-slate-100 font-semibold">
                   <span>Total Consignment Valuation:</span>
                   <span className="font-mono text-base text-emerald-600 dark:text-emerald-400">
-                    ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>

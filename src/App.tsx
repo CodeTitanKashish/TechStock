@@ -20,6 +20,7 @@ import { ApprovalsView } from './components/approvals/ApprovalsView';
 import { ReportsView } from './components/reports/ReportsView';
 import { UsersAndSettingsView } from './components/settings/UsersAndSettingsView';
 import { ApiDocsView } from './components/settings/ApiDocsView';
+import { FrameworkDeckView } from './components/presentation/FrameworkDeckView';
 
 import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
 
@@ -90,6 +91,8 @@ const AppContent: React.FC = () => {
         return <UsersAndSettingsView />;
       case 'api_docs':
         return <ApiDocsView />;
+      case 'framework_deck':
+        return <FrameworkDeckView />;
       default:
         return <DashboardView />;
     }

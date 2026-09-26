@@ -164,7 +164,7 @@ export const StockLedgerView: React.FC = () => {
             Net Valuation Movement
           </span>
           <p className="text-lg font-bold font-mono text-slate-900 dark:text-slate-100 mt-1">
-            ${netValuationImpact.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ₹{netValuationImpact.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <span className="text-[10px] text-slate-400">Net asset change for scope</span>
         </div>
@@ -274,7 +274,7 @@ export const StockLedgerView: React.FC = () => {
                     </td>
 
                     <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      ${entry.unitCost.toFixed(2)}
+                      ₹{entry.unitCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
                     <td className="py-2.5 px-3 text-right font-bold whitespace-nowrap">
@@ -286,8 +286,8 @@ export const StockLedgerView: React.FC = () => {
                         }
                       >
                         {entry.totalValuationChange >= 0
-                          ? `+$${entry.totalValuationChange.toFixed(2)}`
-                          : `-$${Math.abs(entry.totalValuationChange).toFixed(2)}`}
+                          ? `+₹${entry.totalValuationChange.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : `-₹${Math.abs(entry.totalValuationChange).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       </span>
                     </td>
 

@@ -120,8 +120,8 @@ export const PrintSlipModal: React.FC = () => {
                   <th className="py-2.5 px-3 border-r border-slate-200">Item Description</th>
                   <th className="py-2.5 px-3 border-r border-slate-200">Lot / Batch</th>
                   <th className="py-2.5 px-3 border-r border-slate-200 text-right">Quantity</th>
-                  <th className="py-2.5 px-3 border-r border-slate-200 text-right">Unit Value</th>
-                  <th className="py-2.5 px-3 text-right">Total ($)</th>
+                  <th className="py-2.5 px-3 border-r border-slate-200 text-right">Unit Value (₹)</th>
+                  <th className="py-2.5 px-3 text-right">Total (₹)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -135,10 +135,10 @@ export const PrintSlipModal: React.FC = () => {
                       {Math.abs(item.quantity)} {item.uom}
                     </td>
                     <td className="py-2 px-3 border-r border-slate-200 text-right font-mono text-slate-700">
-                      ${item.unitCost.toFixed(2)}
+                      ₹{item.unitCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
-                      ${(Math.abs(item.quantity) * item.unitCost).toFixed(2)}
+                      ₹{(Math.abs(item.quantity) * item.unitCost).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 ))}
@@ -153,7 +153,7 @@ export const PrintSlipModal: React.FC = () => {
                   </td>
                   <td className="py-2.5 px-3 border-r border-slate-200"></td>
                   <td className="py-2.5 px-3 text-right font-mono text-sm text-indigo-900">
-                    ${Math.abs(movement.totalValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{Math.abs(movement.totalValue).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>
               </tfoot>

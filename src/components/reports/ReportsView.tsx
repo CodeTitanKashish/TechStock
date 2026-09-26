@@ -164,7 +164,7 @@ export const ReportsView: React.FC = () => {
             Total Inventory Valuation (Cost)
           </span>
           <p className="text-2xl font-bold font-mono text-slate-900 dark:text-slate-100 mt-1">
-            ${totalValuation.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            ₹{totalValuation.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </p>
           <span className="text-[10px] text-slate-400 block mt-1">
             Asset value based on weighted acquisition cost
@@ -176,10 +176,10 @@ export const ReportsView: React.FC = () => {
             Projected Retail Value
           </span>
           <p className="text-2xl font-bold font-mono text-indigo-600 dark:text-indigo-400 mt-1">
-            ${totalSellingValuation.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            ₹{totalSellingValuation.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </p>
           <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium block mt-1">
-            Unrealized Gross Margin: +${unrealizedGrossMargin.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({marginPct}%)
+            Unrealized Gross Margin: +₹{unrealizedGrossMargin.toLocaleString('en-IN', { maximumFractionDigits: 0 })} ({marginPct}%)
           </span>
         </div>
 
@@ -188,7 +188,7 @@ export const ReportsView: React.FC = () => {
             Replenishment Capital Required
           </span>
           <p className="text-2xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-1">
-            ${totalReplenishmentCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            ₹{totalReplenishmentCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </p>
           <span className="text-[10px] text-slate-400 block mt-1">
             To restore {reorderList.length} low-stock SKUs to safety threshold
@@ -277,7 +277,7 @@ export const ReportsView: React.FC = () => {
                       </td>
 
                       <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
-                        ${r.estCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹{r.estCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
                       <td className="py-3 px-4 text-center">
@@ -315,9 +315,9 @@ export const ReportsView: React.FC = () => {
               <BarChart data={warehouseValuations} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#1e293b' : '#f1f5f9'} />
                 <XAxis dataKey="code" tick={{ fontSize: 11, fill: theme === 'dark' ? '#94a3b8' : '#64748b' }} stroke="transparent" />
-                <YAxis tick={{ fontSize: 11, fill: theme === 'dark' ? '#94a3b8' : '#64748b' }} stroke="transparent" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                <YAxis tick={{ fontSize: 11, fill: theme === 'dark' ? '#94a3b8' : '#64748b' }} stroke="transparent" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  formatter={(val: any) => [`$${Number(val || 0).toLocaleString()}`, 'Valuation']}
+                  formatter={(val: any) => [`₹${Number(val || 0).toLocaleString('en-IN')}`, 'Valuation']}
                   contentStyle={{
                     backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
                     borderColor: theme === 'dark' ? '#334155' : '#e2e8f0',

@@ -118,6 +118,7 @@ export const SystemConfigTab: React.FC = () => {
               onChange={e => handleChange('baseCurrency', e.target.value)}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
             >
+              <option value="INR (₹)">INR (₹) – Indian Rupee (₹)</option>
               <option value="USD ($)">USD ($) – United States Dollar</option>
               <option value="EUR (€)">EUR (€) – Euro Currency</option>
               <option value="GBP (£)">GBP (£) – British Pound Sterling</option>
@@ -162,17 +163,17 @@ export const SystemConfigTab: React.FC = () => {
         <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-              PO Intake Approval Limit ($)
+              PO Intake Approval Limit (₹)
             </label>
             <div className="relative">
-              <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <span className="text-slate-400 absolute left-3 top-2 font-bold text-xs">₹</span>
               <input
                 type="number"
                 min="0"
                 step="500"
                 value={formData.receiptApprovalThreshold}
                 onChange={e => handleChange('receiptApprovalThreshold', Number(e.target.value))}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
               />
             </div>
             <p className="text-[10px] text-slate-400 mt-1">
@@ -182,17 +183,17 @@ export const SystemConfigTab: React.FC = () => {
 
           <div>
             <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-              Inter-Hub Transfer Threshold ($)
+              Inter-Hub Transfer Threshold (₹)
             </label>
             <div className="relative">
-              <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <span className="text-slate-400 absolute left-3 top-2 font-bold text-xs">₹</span>
               <input
                 type="number"
                 min="0"
                 step="500"
                 value={formData.transferApprovalThreshold}
                 onChange={e => handleChange('transferApprovalThreshold', Number(e.target.value))}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
               />
             </div>
             <p className="text-[10px] text-slate-400 mt-1">
@@ -202,17 +203,17 @@ export const SystemConfigTab: React.FC = () => {
 
           <div>
             <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-              Variance Write-Off Threshold ($)
+              Variance Write-Off Threshold (₹)
             </label>
             <div className="relative">
-              <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <span className="text-slate-400 absolute left-3 top-2 font-bold text-xs">₹</span>
               <input
                 type="number"
                 min="0"
                 step="250"
                 value={formData.adjustmentApprovalThreshold}
                 onChange={e => handleChange('adjustmentApprovalThreshold', Number(e.target.value))}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
               />
             </div>
             <p className="text-[10px] text-slate-400 mt-1">

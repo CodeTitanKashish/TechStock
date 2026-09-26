@@ -258,12 +258,12 @@ export const DashboardView: React.FC = () => {
         <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Asset Valuation</span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm">
+              ₹
             </div>
           </div>
           <p className="text-xl md:text-2xl font-bold font-mono text-slate-900 dark:text-slate-100 mt-2">
-            ${totalValuation.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            ₹{totalValuation.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </p>
           <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
             <span>Weighted Cost Basis</span>
@@ -433,7 +433,7 @@ export const DashboardView: React.FC = () => {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(val: any) => `$${Number(val || 0).toLocaleString()}`}
+                      formatter={(val: any) => `₹${Number(val || 0).toLocaleString('en-IN')}`}
                       contentStyle={{
                         backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
                         borderColor: theme === 'dark' ? '#334155' : '#e2e8f0',
@@ -454,7 +454,7 @@ export const DashboardView: React.FC = () => {
                       <span className="truncate">{item.name}</span>
                     </div>
                     <span className="font-mono font-medium text-slate-900 dark:text-slate-200 shrink-0">
-                      ${item.value.toLocaleString()}
+                      ₹{item.value.toLocaleString('en-IN')}
                     </span>
                   </div>
                 ))}

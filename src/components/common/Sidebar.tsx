@@ -12,6 +12,7 @@ import {
   BarChart3,
   Users,
   Code2,
+  Presentation,
   ChevronLeft,
   ChevronRight,
   Boxes,
@@ -78,8 +79,9 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      title: 'System',
+      title: 'System & Architecture',
       items: [
+        { id: 'framework_deck', label: 'Framework Deck (PPT)', icon: Presentation, badge: 'PPTX', badgeColor: 'bg-indigo-600 text-white font-mono text-[9px]' },
         { id: 'users_settings', label: 'Settings & Audit Logs', icon: Users },
         { id: 'api_docs', label: 'REST API & Models', icon: Code2 },
       ],

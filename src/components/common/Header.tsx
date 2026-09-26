@@ -84,6 +84,8 @@ export const Header: React.FC = () => {
         return ['StockSense', 'System', 'Users & RBAC'];
       case 'api_docs':
         return ['StockSense', 'System', 'REST API & Schemas'];
+      case 'framework_deck':
+        return ['StockSense', 'Architecture', 'Framework PPT Deck'];
       default:
         return ['StockSense', 'Console'];
     }

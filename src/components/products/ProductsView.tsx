@@ -488,12 +488,12 @@ export const ProductsView: React.FC = () => {
 
                       {/* Cost */}
                       <td className="py-3 px-4 text-right font-mono text-slate-700 dark:text-slate-300">
-                        ${p.costPrice.toFixed(2)}
+                        ₹{p.costPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
                       {/* Sell */}
                       <td className="py-3 px-4 text-right font-mono font-medium text-slate-900 dark:text-slate-100">
-                        ${p.sellingPrice.toFixed(2)}
+                        ₹{p.sellingPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
                       {/* Available Stock */}
@@ -622,7 +622,7 @@ export const ProductsView: React.FC = () => {
 
                       {/* Total Valuation */}
                       <td className="py-3 px-4 text-right font-mono font-medium text-emerald-600 dark:text-emerald-400">
-                        ${(p.totalStock * p.costPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹{(p.totalStock * p.costPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
                       {/* Locations Map Button */}
@@ -838,7 +838,7 @@ export const ProductsView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-medium text-slate-700 dark:text-slate-300 block mb-1">
-                    Cost Price ($)
+                    Cost Price (₹)
                   </label>
                   <input
                     type="number"
@@ -850,7 +850,7 @@ export const ProductsView: React.FC = () => {
                 </div>
                 <div>
                   <label className="font-medium text-slate-700 dark:text-slate-300 block mb-1">
-                    Selling Price ($)
+                    Selling Price (₹)
                   </label>
                   <input
                     type="number"
