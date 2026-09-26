@@ -20,6 +20,8 @@ import {
   UserPlus,
   Volume2,
   VolumeX,
+  Laptop,
+  Sparkles,
 } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 import { UserRole } from '../../types/inventory';
@@ -34,6 +36,7 @@ export const Header: React.FC = () => {
     setActiveWarehouseId,
     theme,
     toggleTheme,
+    setTheme,
     currentUser,
     switchRole,
     notifications,
@@ -47,6 +50,7 @@ export const Header: React.FC = () => {
   } = useInventory();
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(sound.enabled);
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [warehouseDropdownOpen, setWarehouseDropdownOpen] = useState(false);
@@ -265,26 +269,116 @@ export const Header: React.FC = () => {
           {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
         </button>
 
-        {/* Global Theme Toggle */}
-        <button
-          id="theme-toggle"
-          type="button"
-          onClick={toggleTheme}
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all shadow-2xs group focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-        >
-          <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400 transition-transform duration-200 group-hover:rotate-45" />
-            ) : (
-              <Moon className="w-4 h-4 text-slate-600 dark:text-slate-300 transition-transform duration-200 group-hover:-rotate-12" />
-            )}
-          </div>
-          <span className="hidden lg:inline text-xs font-medium select-none capitalize">
-            {theme === 'dark' ? 'Dark' : 'Light'}
-          </span>
-        </button>
+        {/* Enhanced Theme Switcher & Preset Selector */}
+        <div className="relative">
+          <button
+            id="theme-toggle"
+            type="button"
+            onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
+            aria-label="Theme mode selector"
+            title={theme === 'dark' ? 'Dark Mode Active (Click for theme options)' : 'Light Mode Active (Click for theme options)'}
+            className={`flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all shadow-2xs group focus:outline-hidden focus:ring-2 focus:ring-indigo-500 ${
+              theme === 'dark'
+                ? 'border-indigo-800/80 bg-slate-800/90 text-slate-100 hover:bg-slate-700/80'
+                : 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700'
+            }`}
+          >
+            <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
+              {theme === 'dark' ? (
+                <Moon className="w-4 h-4 text-indigo-400 transition-transform duration-200 group-hover:-rotate-12" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-500 transition-transform duration-200 group-hover:rotate-45" />
+              )}
+            </div>
+            <span className="hidden lg:inline text-xs font-semibold select-none">
+              {theme === 'dark' ? 'Midnight Dark' : 'Daylight'}
+            </span>
+            <ChevronDown className="w-3 h-3 text-slate-400" />
+          </button>
+
+          {/* Theme Dropdown Popover */}
+          {themeDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden text-xs animate-in fade-in zoom-in-95 duration-100 p-1.5 space-y-1">
+              <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                Display Theme
+              </div>
+
+              {/* Dark Preset */}
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClick();
+                  setTheme('dark');
+                  setThemeDropdownOpen(false);
+                }}
+                className={`w-full p-2 rounded-xl flex items-center justify-between text-left transition-colors ${
+                  theme === 'dark'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1 rounded-lg bg-slate-900 text-indigo-400 border border-slate-700">
+                    <Moon className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="block font-medium">Midnight Obsidian</span>
+                    <span className="text-[10px] text-slate-400 block">High-contrast dark canvas</span>
+                  </div>
+                </div>
+                {theme === 'dark' && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+              </button>
+
+              {/* Light Preset */}
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClick();
+                  setTheme('light');
+                  setThemeDropdownOpen(false);
+                }}
+                className={`w-full p-2 rounded-xl flex items-center justify-between text-left transition-colors ${
+                  theme === 'light'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1 rounded-lg bg-amber-50 text-amber-600 border border-amber-200">
+                    <Sun className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="block font-medium">Daylight Studio</span>
+                    <span className="text-[10px] text-slate-400 block">Crisp industrial light mode</span>
+                  </div>
+                </div>
+                {theme === 'light' && <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+              </button>
+
+              {/* System Preset */}
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClick();
+                  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  setTheme(prefersDark ? 'dark' : 'light');
+                  setThemeDropdownOpen(false);
+                }}
+                className="w-full p-2 rounded-xl flex items-center justify-between text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    <Laptop className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="block font-medium">System Synchronized</span>
+                    <span className="text-[10px] text-slate-400 block">Match OS preference</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Notifications Popover */}
         <div className="relative">
@@ -355,7 +449,7 @@ export const Header: React.FC = () => {
         <button
           onClick={() => openAuthPortal('signin')}
           className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors"
-          title="Sign In with existing credentials or demo user"
+          title="Sign in to your corporate account"
         >
           <LogIn className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
           <span>Sign In</span>

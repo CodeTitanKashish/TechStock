@@ -76,14 +76,6 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
 
   const [loading, setLoading] = useState(false);
 
-  // Quick Demo Logins
-  const demoUsers = [
-    { role: 'admin' as UserRole, name: 'Alex Mercer', email: 'alex.mercer@stocksense.corp', pwd: 'admin', badge: 'Admin', desc: 'Full ERP command' },
-    { role: 'warehouse_manager' as UserRole, name: 'Elena Rostova', email: 'elena.rostova@stocksense.corp', pwd: 'manager', badge: 'Manager', desc: 'Facility approvals' },
-    { role: 'inventory_clerk' as UserRole, name: 'Marcus Vance', email: 'marcus.vance@stocksense.corp', pwd: 'clerk', badge: 'Clerk', desc: 'Intake & packing' },
-    { role: 'auditor' as UserRole, name: 'Sarah Chen, CPA', email: 'sarah.chen@stocksense.corp', pwd: 'auditor', badge: 'Auditor', desc: 'Ledger audit' },
-  ];
-
   // Password strength helper
   const getPasswordStrength = (pwd: string) => {
     if (!pwd) return 0;
@@ -114,21 +106,6 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
         if (onClose) onClose();
       }
     }, 300);
-  };
-
-  const handleQuickSignIn = (userEmail: string, userPwd: string) => {
-    sound.playClick();
-    setSignInEmail(userEmail);
-    setSignInPassword(userPwd);
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const res = login(userEmail, userPwd);
-      if (res.success) {
-        sound.playSuccess();
-        if (onClose) onClose();
-      }
-    }, 200);
   };
 
   const handleSignUp = (e: React.FormEvent) => {
@@ -388,34 +365,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
               </button>
             </form>
 
-            {/* Quick Demo Switcher Section */}
-            <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-                Fast Demo Operator Profiles:
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                {demoUsers.map(u => (
-                  <button
-                    key={u.role}
-                    type="button"
-                    onClick={() => handleQuickSignIn(u.email, u.pwd)}
-                    className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                        {u.name}
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 font-mono">
-                        {u.badge}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-slate-500 block truncate mt-0.5">{u.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-center pt-2 text-slate-500">
+            <div className="text-center pt-3 border-t border-slate-200 dark:border-slate-800 text-slate-500">
               <span>New to StockSense? </span>
               <button
                 type="button"
