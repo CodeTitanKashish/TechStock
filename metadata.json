@@ -1,0 +1,6 @@
+{
+  "name": "StockSense – Enterprise Inventory Management System",
+  "description": "Complete web-based ERP inventory management platform with multi-warehouse tracking, stock movements, receipts, deliveries, internal transfers, approvals, and real-time ledger.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
