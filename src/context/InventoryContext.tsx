@@ -71,6 +71,7 @@ interface InventoryContextType {
   setCurrentTab: (tab: string) => void;
   setActiveWarehouseId: (id: string) => void;
   toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
   switchRole: (role: UserRole) => void;
   setCurrentUser: (user: User) => void;
   openPrintSlip: (movement: InventoryMovement) => void;
@@ -205,11 +206,15 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [toast, setToast] = useState<ToastState | null>(null);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.THEME);
-    return saved === 'dark' ? 'dark' : 'light';
+    const saved = localStorage.getItem('theme') || localStorage.getItem(STORAGE_KEYS.THEME);
+    if (saved === 'dark' || saved === 'light') return saved;
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
   });
 
-  // Apply dark mode class to HTML root
+  // Apply dark mode class to HTML root and persist preference to local storage
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
@@ -218,6 +223,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       root.classList.remove('dark');
     }
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
+    localStorage.setItem('theme', theme);
   }, [theme]);
 
   // Persist to local storage
@@ -1525,6 +1531,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setCurrentTab,
         setActiveWarehouseId,
         toggleTheme,
+        setTheme,
         switchRole,
         setCurrentUser,
         openPrintSlip,

@@ -243,13 +243,25 @@ export const Header: React.FC = () => {
 
       {/* Zone 3: Notifications, Theme Switcher, Role Badge & User Profile */}
       <div className="flex items-center gap-2">
-        {/* Theme Toggle */}
+        {/* Global Theme Toggle */}
         <button
+          id="theme-toggle"
+          type="button"
           onClick={toggleTheme}
-          className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all shadow-2xs group focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
         >
-          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+          <div className="relative w-4 h-4 flex items-center justify-center shrink-0">
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400 transition-transform duration-200 group-hover:rotate-45" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-600 dark:text-slate-300 transition-transform duration-200 group-hover:-rotate-12" />
+            )}
+          </div>
+          <span className="hidden lg:inline text-xs font-medium select-none capitalize">
+            {theme === 'dark' ? 'Dark' : 'Light'}
+          </span>
         </button>
 
         {/* Notifications Popover */}
