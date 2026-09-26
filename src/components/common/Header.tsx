@@ -18,9 +18,12 @@ import {
   LogOut,
   LogIn,
   UserPlus,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 import { UserRole } from '../../types/inventory';
+import { sound } from '../../utils/audio';
 
 export const Header: React.FC = () => {
   const {
@@ -43,6 +46,7 @@ export const Header: React.FC = () => {
     resetDemoData,
   } = useInventory();
 
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(sound.enabled);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [warehouseDropdownOpen, setWarehouseDropdownOpen] = useState(false);
@@ -241,8 +245,26 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Zone 3: Notifications, Theme Switcher, Role Badge & User Profile */}
+      {/* Zone 3: Notifications, Sound FX, Theme Switcher, Role Badge & User Profile */}
       <div className="flex items-center gap-2">
+        {/* Tactile Sound FX Toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            const next = sound.toggle();
+            setSoundEnabled(next);
+          }}
+          aria-label={soundEnabled ? 'Disable tactile sound FX' : 'Enable tactile sound FX'}
+          title={soundEnabled ? 'Tactile Sound FX Active (Click to mute)' : 'Sound Muted (Click to enable)'}
+          className={`p-2 rounded-xl border transition-all ${
+            soundEnabled
+              ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100'
+              : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+          }`}
+        >
+          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+        </button>
+
         {/* Global Theme Toggle */}
         <button
           id="theme-toggle"

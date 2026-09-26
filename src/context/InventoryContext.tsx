@@ -46,7 +46,7 @@ interface InventoryContextType {
   searchModalOpen: boolean;
   authModalOpen: boolean;
   isAuthenticated: boolean;
-  authPortalMode: 'signin' | 'signup';
+  authPortalMode: 'signin' | 'signup' | 'forgot_password';
   toast: ToastState | null;
 
   // Audit Logs & System Configuration
@@ -82,8 +82,8 @@ interface InventoryContextType {
   closeGlobalSearch: () => void;
   openAuthModal: () => void;
   closeAuthModal: () => void;
-  setAuthPortalMode: (mode: 'signin' | 'signup') => void;
-  openAuthPortal: (mode?: 'signin' | 'signup') => void;
+  setAuthPortalMode: (mode: 'signin' | 'signup' | 'forgot_password') => void;
+  openAuthPortal: (mode?: 'signin' | 'signup' | 'forgot_password') => void;
   login: (email: string, password?: string) => { success: boolean; error?: string };
   signup: (userData: {
     name: string;
@@ -93,6 +93,7 @@ interface InventoryContextType {
     department: string;
     assignedWarehouses: string[];
   }) => { success: boolean; error?: string };
+  resetPassword: (email: string, newPassword: string) => { success: boolean; error?: string };
   logout: () => void;
   dismissToast: () => void;
   showToast: (title: string, message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
@@ -202,7 +203,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const saved = localStorage.getItem('stocksense_auth_authenticated');
     return saved !== null ? saved === 'true' : true;
   });
-  const [authPortalMode, setAuthPortalMode] = useState<'signin' | 'signup'>('signin');
+  const [authPortalMode, setAuthPortalMode] = useState<'signin' | 'signup' | 'forgot_password'>('signin');
   const [toast, setToast] = useState<ToastState | null>(null);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -424,7 +425,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const openAuthModal = () => setAuthModalOpen(true);
   const closeAuthModal = () => setAuthModalOpen(false);
 
-  const openAuthPortal = (mode: 'signin' | 'signup' = 'signin') => {
+  const openAuthPortal = (mode: 'signin' | 'signup' | 'forgot_password' = 'signin') => {
     setAuthPortalMode(mode);
     setAuthModalOpen(true);
   };
@@ -515,6 +516,40 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setNotifications(prev => [welcomeNotif, ...prev]);
 
     showToast('Account Created', `Welcome to StockSense, ${newUser.name}!`, 'success');
+    return { success: true };
+  };
+
+  const resetPassword = (email: string, newPassword: string): { success: boolean; error?: string } => {
+    const cleanEmail = email.trim().toLowerCase();
+    const existingIndex = users.findIndex(u => u.email.toLowerCase() === cleanEmail);
+    
+    if (existingIndex === -1) {
+      return { success: false, error: 'No account found with this corporate email address.' };
+    }
+
+    const updatedUser = {
+      ...users[existingIndex],
+      password: newPassword,
+    };
+
+    const updatedUsers = [...users];
+    updatedUsers[existingIndex] = updatedUser;
+    setUsers(updatedUsers);
+
+    if (currentUser.email.toLowerCase() === cleanEmail) {
+      setCurrentUserState(updatedUser);
+    }
+
+    logAuditEvent({
+      actionCategory: 'auth',
+      actionType: 'PASSWORD_RESET',
+      targetEntity: 'UserAccount',
+      entityRef: cleanEmail,
+      description: `Password reset successfully completed for ${updatedUser.name} (${cleanEmail})`,
+      severity: 'warning',
+    });
+
+    showToast('Password Updated', 'Your credentials have been securely updated. You can now sign in.', 'success');
     return { success: true };
   };
 
@@ -1546,6 +1581,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         openAuthPortal,
         login,
         signup,
+        resetPassword,
         logout,
         dismissToast,
         showToast,

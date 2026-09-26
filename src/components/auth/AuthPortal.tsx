@@ -17,9 +17,13 @@ import {
   Check,
   Warehouse as WarehouseIcon,
   X,
+  BadgeCheck,
+  ShieldCheck,
+  Layers,
 } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 import { UserRole } from '../../types/inventory';
+import { sound } from '../../utils/audio';
 
 interface AuthPortalProps {
   isModal?: boolean;
@@ -29,26 +33,27 @@ interface AuthPortalProps {
 export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose }) => {
   const {
     users,
-    currentUser,
     warehouses,
     login,
     signup,
+    resetPassword,
     authPortalMode,
-    setAuthPortalMode,
     showToast,
   } = useInventory();
 
-  // Mode: 'signin' | 'signup' | 'otp_reset' | 'jwt_inspector'
-  const [mode, setMode] = useState<'signin' | 'signup' | 'otp_reset' | 'jwt_inspector'>(authPortalMode || 'signin');
+  // Distinct Portal Modes: 'signin' | 'signup' | 'reset_password'
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset_password'>(
+    authPortalMode === 'signup' ? 'signup' : 'signin'
+  );
 
-  // Sign In fields
+  // Sign In State
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [signInError, setSignInError] = useState<string | null>(null);
 
-  // Sign Up fields
+  // Sign Up State
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
@@ -56,27 +61,39 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState(false);
   const [signUpRole, setSignUpRole] = useState<UserRole>('warehouse_manager');
-  const [signUpDepartment, setSignUpDepartment] = useState('Logistics Operations');
+  const [signUpDepartment, setSignUpDepartment] = useState('Logistics & Warehousing');
   const [signUpWarehouse, setSignUpWarehouse] = useState<string>('ALL');
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [signUpError, setSignUpError] = useState<string | null>(null);
 
-  // OTP Reset fields
-  const [otpEmail, setOtpEmail] = useState('');
-  const [otpStep, setOtpStep] = useState<'request' | 'verify' | 'new_password'>('request');
-  const [otpCode, setOtpCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
+  // Non-OTP Password Reset State
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
   // Quick Demo Logins
   const demoUsers = [
-    { role: 'admin' as UserRole, name: 'Alex Mercer', email: 'alex.mercer@stocksense.corp', pwd: 'admin', badge: 'Admin' },
-    { role: 'warehouse_manager' as UserRole, name: 'Elena Rostova', email: 'elena.rostova@stocksense.corp', pwd: 'manager', badge: 'Manager' },
-    { role: 'inventory_clerk' as UserRole, name: 'Marcus Vance', email: 'marcus.vance@stocksense.corp', pwd: 'clerk', badge: 'Clerk' },
-    { role: 'auditor' as UserRole, name: 'Sarah Chen, CPA', email: 'sarah.chen@stocksense.corp', pwd: 'auditor', badge: 'Auditor' },
+    { role: 'admin' as UserRole, name: 'Alex Mercer', email: 'alex.mercer@stocksense.corp', pwd: 'admin', badge: 'Admin', desc: 'Full ERP command' },
+    { role: 'warehouse_manager' as UserRole, name: 'Elena Rostova', email: 'elena.rostova@stocksense.corp', pwd: 'manager', badge: 'Manager', desc: 'Facility approvals' },
+    { role: 'inventory_clerk' as UserRole, name: 'Marcus Vance', email: 'marcus.vance@stocksense.corp', pwd: 'clerk', badge: 'Clerk', desc: 'Intake & packing' },
+    { role: 'auditor' as UserRole, name: 'Sarah Chen, CPA', email: 'sarah.chen@stocksense.corp', pwd: 'auditor', badge: 'Auditor', desc: 'Ledger audit' },
   ];
+
+  // Password strength helper
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return 0;
+    let score = 0;
+    if (pwd.length >= 6) score += 25;
+    if (pwd.length >= 10) score += 25;
+    if (/[A-Z]/.test(pwd)) score += 25;
+    if (/[0-9!@#$%^&*]/.test(pwd)) score += 25;
+    return score;
+  };
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,24 +108,27 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
       setLoading(false);
       const res = login(signInEmail, signInPassword);
       if (!res.success) {
-        setSignInError(res.error || 'Authentication failed');
+        setSignInError(res.error || 'Authentication failed. Please check your credentials.');
       } else {
+        sound.playSuccess();
         if (onClose) onClose();
       }
-    }, 350);
+    }, 300);
   };
 
   const handleQuickSignIn = (userEmail: string, userPwd: string) => {
+    sound.playClick();
     setSignInEmail(userEmail);
     setSignInPassword(userPwd);
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       const res = login(userEmail, userPwd);
-      if (res.success && onClose) {
-        onClose();
+      if (res.success) {
+        sound.playSuccess();
+        if (onClose) onClose();
       }
-    }, 250);
+    }, 200);
   };
 
   const handleSignUp = (e: React.FormEvent) => {
@@ -128,7 +148,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
       return;
     }
     if (signUpPassword !== signUpConfirmPassword) {
-      setSignUpError('Passwords do not match. Please re-type.');
+      setSignUpError('Passwords do not match. Please verify.');
       return;
     }
     if (!acceptTerms) {
@@ -151,35 +171,40 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
       if (!res.success) {
         setSignUpError(res.error || 'Registration failed');
       } else {
+        sound.playSuccess();
         if (onClose) onClose();
       }
-    }, 400);
+    }, 350);
   };
 
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const handleDirectPasswordReset = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otpEmail) return;
-    setOtpStep('verify');
-    showToast('OTP Dispatched', `A 6-digit one-time code (849201) was dispatched to ${otpEmail}`, 'info');
-  };
+    setResetError(null);
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otpCode === '849201' || otpCode.length === 6) {
-      setOtpStep('new_password');
-      showToast('OTP Confirmed', 'One-time code verified. Create your new password.', 'success');
-    } else {
-      showToast('Invalid Code', 'Enter test verification code 849201.', 'error');
+    if (!resetEmail.trim() || !resetEmail.includes('@')) {
+      setResetError('Please enter a valid corporate email address.');
+      return;
     }
-  };
+    if (resetNewPassword.length < 6) {
+      setResetError('New password must contain at least 6 characters.');
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError('Passwords do not match.');
+      return;
+    }
 
-  const handleSaveNewPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    showToast('Password Updated', 'Your credentials have been securely reset. Sign in with your new password.', 'success');
-    setSignInEmail(otpEmail);
-    setSignInPassword(newPassword);
-    setMode('signin');
-    setOtpStep('request');
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      const res = resetPassword(resetEmail, resetNewPassword);
+      if (!res.success) {
+        setResetError(res.error || 'Password reset could not be completed.');
+      } else {
+        sound.playSuccess();
+        setResetSuccess(true);
+      }
+    }, 350);
   };
 
   const roleDescriptions: Record<UserRole, string> = {
@@ -204,7 +229,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                 ERP v2.4
               </span>
             </div>
-            <p className="text-xs text-slate-400">Enterprise Web-Based Inventory Management System</p>
+            <p className="text-xs text-slate-400">Enterprise Inventory & Multi-Warehouse System</p>
           </div>
         </div>
 
@@ -218,42 +243,55 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
         )}
       </div>
 
-      {/* Mode Navigation Tabs */}
+      {/* Distinct Mode Navigation Tabs */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-xs">
         <button
-          onClick={() => { setMode('signin'); setSignInError(null); }}
-          className={`flex-1 py-3 font-semibold text-center border-b-2 transition-colors ${
+          onClick={() => {
+            sound.playClick();
+            setMode('signin');
+            setSignInError(null);
+          }}
+          className={`flex-1 py-3 font-semibold text-center border-b-2 transition-all ${
             mode === 'signin'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-2xs'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-2xs font-bold'
               : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           Sign In
         </button>
         <button
-          onClick={() => { setMode('signup'); setSignUpError(null); }}
-          className={`flex-1 py-3 font-semibold text-center border-b-2 transition-colors ${
+          onClick={() => {
+            sound.playClick();
+            setMode('signup');
+            setSignUpError(null);
+          }}
+          className={`flex-1 py-3 font-semibold text-center border-b-2 transition-all ${
             mode === 'signup'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-2xs'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-2xs font-bold'
               : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
-          Sign Up (New Account)
+          Register New Account
         </button>
         <button
-          onClick={() => setMode('otp_reset')}
-          className={`hidden sm:block px-4 py-3 font-medium text-center border-b-2 transition-colors ${
-            mode === 'otp_reset'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900'
+          onClick={() => {
+            sound.playClick();
+            setMode('reset_password');
+            setResetError(null);
+            setResetSuccess(false);
+          }}
+          className={`px-4 py-3 font-medium text-center border-b-2 transition-all ${
+            mode === 'reset_password'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900 shadow-2xs font-bold'
               : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
-          OTP Reset
+          Reset Password
         </button>
       </div>
 
       <div className="p-6 md:p-8 space-y-6 text-xs">
-        {/* ======================= SIGN IN TAB ======================= */}
+        {/* ======================= 1. SIGN IN PROCESS ======================= */}
         {mode === 'signin' && (
           <div className="space-y-5 animate-in fade-in duration-200">
             <div>
@@ -261,7 +299,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                 Sign in to your Enterprise Console
               </h2>
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-                Access multi-warehouse facilities, approvals, and real-time inventory ledger
+                Access multi-facility storage, physical counts, approvals, and perpetual ledger
               </p>
             </div>
 
@@ -297,10 +335,14 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                   </label>
                   <button
                     type="button"
-                    onClick={() => { setOtpEmail(signInEmail); setMode('otp_reset'); }}
-                    className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline"
+                    onClick={() => {
+                      sound.playClick();
+                      setResetEmail(signInEmail);
+                      setMode('reset_password');
+                    }}
+                    className="text-indigo-600 dark:text-indigo-400 hover:underline text-[11px]"
                   >
-                    Forgot password? (OTP)
+                    Forgot password?
                   </button>
                 </div>
                 <div className="relative">
@@ -332,67 +374,72 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                     onChange={e => setRememberMe(e.target.checked)}
                     className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span>Keep me signed in on this workstation</span>
+                  <span>Remember this workstation</span>
                 </label>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70"
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
               >
                 <span>{loading ? 'Authenticating...' : 'Sign In to Console'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
 
-            {/* Quick Demo Sign-In Personas */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-2.5">
-                Instant Demo Sign-In (1-Click Authentication):
+            {/* Quick Demo Switcher Section */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                Fast Demo Operator Profiles:
               </span>
               <div className="grid grid-cols-2 gap-2">
-                {demoUsers.map(d => (
+                {demoUsers.map(u => (
                   <button
-                    key={d.email}
+                    key={u.role}
                     type="button"
-                    onClick={() => handleQuickSignIn(d.email, d.pwd)}
-                    className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-left transition-colors flex items-center justify-between group"
+                    onClick={() => handleQuickSignIn(u.email, u.pwd)}
+                    className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors group"
                   >
-                    <div className="truncate pr-1">
-                      <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{d.name}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{d.email}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                        {u.name}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 font-mono">
+                        {u.badge}
+                      </span>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 shrink-0">
-                      {d.badge}
-                    </span>
+                    <span className="text-[10px] text-slate-500 block truncate mt-0.5">{u.desc}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="text-center pt-2 text-slate-500">
-              <span>Don't have an account? </span>
+              <span>New to StockSense? </span>
               <button
                 type="button"
-                onClick={() => setMode('signup')}
+                onClick={() => {
+                  sound.playClick();
+                  setMode('signup');
+                }}
                 className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                Sign up for StockSense
+                Create an Enterprise Account
               </button>
             </div>
           </div>
         )}
 
-        {/* ======================= SIGN UP TAB ======================= */}
+        {/* ======================= 2. SIGN UP (NEW ACCOUNT) PROCESS ======================= */}
         {mode === 'signup' && (
-          <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="space-y-5 animate-in fade-in duration-200">
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                 Register New Enterprise Account
               </h2>
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-                Join the StockSense global logistics supply chain platform
+                Complete onboarding to provision your role-based access credentials
               </p>
             </div>
 
@@ -403,7 +450,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
               </div>
             )}
 
-            <form onSubmit={handleSignUp} className="space-y-3.5">
+            <form onSubmit={handleSignUp} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
@@ -415,8 +462,8 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                       type="text"
                       value={signUpName}
                       onChange={e => setSignUpName(e.target.value)}
-                      placeholder="e.g. Jordan Reed"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                      placeholder="e.g. Jordan Hayes"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                   </div>
@@ -432,18 +479,19 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                       type="email"
                       value={signUpEmail}
                       onChange={e => setSignUpEmail(e.target.value)}
-                      placeholder="j.reed@stocksense.corp"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                      placeholder="jordan.hayes@stocksense.corp"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                   </div>
                 </div>
               </div>
 
+              {/* Password & Confirm Password */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    Password *
+                    Create Password *
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -451,16 +499,14 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                       type={showSignUpPassword ? 'text' : 'password'}
                       value={signUpPassword}
                       onChange={e => setSignUpPassword(e.target.value)}
-                      placeholder="Min. 6 chars..."
-                      className="w-full pl-9 pr-10 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                      placeholder="At least 6 characters"
+                      className="w-full pl-9 pr-10 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowSignUpPassword(!showSignUpPassword)}
-                      aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
-                      title={showSignUpPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-0.5 rounded focus:outline-hidden"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
                     >
                       {showSignUpPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -477,16 +523,14 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                       type={showSignUpConfirmPassword ? 'text' : 'password'}
                       value={signUpConfirmPassword}
                       onChange={e => setSignUpConfirmPassword(e.target.value)}
-                      placeholder="Re-type password..."
-                      className="w-full pl-9 pr-10 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                      placeholder="Repeat password"
+                      className="w-full pl-9 pr-10 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowSignUpConfirmPassword(!showSignUpConfirmPassword)}
-                      aria-label={showSignUpConfirmPassword ? 'Hide password' : 'Show password'}
-                      title={showSignUpConfirmPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-0.5 rounded focus:outline-hidden"
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
                     >
                       {showSignUpConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -494,24 +538,49 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                 </div>
               </div>
 
-              {/* Role selection */}
+              {/* Password Strength Meter */}
+              {signUpPassword && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>Password Security Strength:</span>
+                    <span>{getPasswordStrength(signUpPassword)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        getPasswordStrength(signUpPassword) < 50
+                          ? 'bg-rose-500'
+                          : getPasswordStrength(signUpPassword) < 75
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${getPasswordStrength(signUpPassword)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Role Selection (RBAC Cards) */}
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
                   System Role (RBAC Privileges) *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(['admin', 'warehouse_manager', 'inventory_clerk', 'auditor'] as UserRole[]).map(r => (
                     <button
                       key={r}
                       type="button"
-                      onClick={() => setSignUpRole(r)}
-                      className={`p-2 rounded-xl border text-center transition-colors ${
+                      onClick={() => {
+                        sound.playClick();
+                        setSignUpRole(r);
+                      }}
+                      className={`p-2.5 rounded-xl border text-center transition-all ${
                         signUpRole === r
-                          ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold'
-                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300'
+                          ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold ring-1 ring-indigo-500'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
                       }`}
                     >
-                      <span className="capitalize block">{r.replace('_', ' ')}</span>
+                      <span className="capitalize block text-xs">{r.replace('_', ' ')}</span>
                     </button>
                   ))}
                 </div>
@@ -520,10 +589,11 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                 </p>
               </div>
 
+              {/* Department & Primary Warehouse Scope */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    Department
+                    Department Scope
                   </label>
                   <select
                     value={signUpDepartment}
@@ -540,7 +610,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
 
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    Primary Facility Scope
+                    Assigned Facility Scope
                   </label>
                   <select
                     value={signUpWarehouse}
@@ -566,7 +636,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                     className="w-3.5 h-3.5 mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 shrink-0"
                   />
                   <span className="text-[11px] leading-tight">
-                    I agree to the StockSense Corporate Security Policy, physical count auditing protocols, and RFC 7519 session compliance.
+                    I agree to the StockSense Corporate Security Policy, physical count auditing protocols, and double-entry governance compliance.
                   </span>
                 </label>
               </div>
@@ -576,7 +646,7 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
                 disabled={loading}
                 className="w-full py-2.5 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
               >
-                <span>{loading ? 'Creating Account...' : 'Create Account & Sign In'}</span>
+                <span>{loading ? 'Registering Account...' : 'Complete Registration & Sign In'}</span>
                 <Check className="w-4 h-4" />
               </button>
             </form>
@@ -585,7 +655,10 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
               <span>Already registered? </span>
               <button
                 type="button"
-                onClick={() => setMode('signin')}
+                onClick={() => {
+                  sound.playClick();
+                  setMode('signin');
+                }}
                 className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
               >
                 Sign in to your account
@@ -594,127 +667,137 @@ export const AuthPortal: React.FC<AuthPortalProps> = ({ isModal = false, onClose
           </div>
         )}
 
-        {/* ======================= OTP PASSWORD RESET TAB ======================= */}
-        {mode === 'otp_reset' && (
+        {/* ======================= 3. PASSWORD RESET (NO OTP - DIRECT RECOVERY) ======================= */}
+        {mode === 'reset_password' && (
           <div className="space-y-4 animate-in fade-in duration-200">
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                Self-Service OTP Password Reset
+                Self-Service Password Reset
               </h2>
               <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-                Reset your credentials via high-security 6-digit one-time code
+                Direct credential recovery without OTP verification codes
               </p>
             </div>
 
-            {otpStep === 'request' && (
-              <form onSubmit={handleRequestOtp} className="space-y-4">
-                <p className="text-slate-600 dark:text-slate-300">
-                  Enter your corporate email address to receive a secure time-based OTP.
-                </p>
+            {resetSuccess ? (
+              <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center space-y-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">Password Updated Successfully!</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                    Your password has been securely reset for <strong>{resetEmail}</strong>. You can now sign in immediately.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    setSignInEmail(resetEmail);
+                    setSignInPassword(resetNewPassword);
+                    setMode('signin');
+                  }}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors shadow-xs"
+                >
+                  Proceed to Sign In →
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleDirectPasswordReset} className="space-y-4">
+                {resetError && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-[11px] flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-indigo-500 shrink-0" />
+                  <span>Enter your registered corporate email and set your new password directly.</span>
+                </div>
+
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    Corporate Email
+                    Corporate Email Address *
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
                       type="email"
-                      value={otpEmail}
-                      onChange={e => setOtpEmail(e.target.value)}
-                      placeholder="alex.mercer@stocksense.corp"
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                      value={resetEmail}
+                      onChange={e => setResetEmail(e.target.value)}
+                      placeholder="e.g. alex.mercer@stocksense.corp"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                       required
                     />
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors"
-                >
-                  Send 6-Digit OTP Code
-                </button>
-              </form>
-            )}
 
-            {otpStep === 'verify' && (
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-300">
-                  <p className="font-semibold">Demo Sandbox Verification Code:</p>
-                  <p className="text-[11px] mt-0.5">Enter code <strong className="font-mono text-sm">849201</strong> to confirm identity.</p>
-                </div>
                 <div>
                   <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    Enter Verification Code
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    value={otpCode}
-                    onChange={e => setOtpCode(e.target.value)}
-                    placeholder="849201"
-                    className="w-full px-3 py-2 text-center font-mono text-lg tracking-widest rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold"
-                    required
-                    autoFocus
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors"
-                >
-                  Verify Code
-                </button>
-              </form>
-            )}
-
-            {otpStep === 'new_password' && (
-              <form onSubmit={handleSaveNewPassword} className="space-y-4">
-                <p className="text-slate-600 dark:text-slate-300">
-                  Identity verified. Enter your new password.
-                </p>
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    New Secure Password
+                    New Secure Password *
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                     <input
-                      type={showNewPassword ? 'text' : 'password'}
-                      value={newPassword}
-                      onChange={e => setNewPassword(e.target.value)}
-                      placeholder="••••••••••••"
-                      className="w-full pl-9 pr-10 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                      type={showResetPassword ? 'text' : 'password'}
+                      value={resetNewPassword}
+                      onChange={e => setResetNewPassword(e.target.value)}
+                      placeholder="At least 6 characters"
+                      className="w-full pl-9 pr-10 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                       required
-                      autoFocus
                     />
                     <button
                       type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
-                      title={showNewPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-0.5 rounded focus:outline-hidden"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
                     >
-                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
+
+                <div>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                    Confirm New Password *
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type={showResetPassword ? 'text' : 'password'}
+                      value={resetConfirmPassword}
+                      onChange={e => setResetConfirmPassword(e.target.value)}
+                      placeholder="Repeat new password"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors"
+                  disabled={loading}
+                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
                 >
-                  Save Password & Return to Sign In
+                  <span>{loading ? 'Updating Credentials...' : 'Save New Password & Update'}</span>
+                  <Check className="w-4 h-4" />
                 </button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      setMode('signin');
+                    }}
+                    className="font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  >
+                    ← Back to Sign In
+                  </button>
+                </div>
               </form>
             )}
-
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={() => setMode('signin')}
-                className="font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-              >
-                ← Back to Sign In
-              </button>
-            </div>
           </div>
         )}
       </div>
